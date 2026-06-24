@@ -4,6 +4,23 @@
 
 The repository currently runs from a single `Aibot.js` file with bot lifecycle, movement, mining, crafting, hazard checks, and speedrun command handling all in one place.
 
+## Runtime Flow (Current vs Updated)
+
+### Previous boot flow
+
+1. `Aibot.js` calls `src/index.js`.
+2. `src/index.js` calls `startLegacyBot()`.
+3. `LegacyCompat` requires `LegacyAibot`, which immediately boots legacy runtime.
+4. Legacy command handling and speedrun flow own bot connection/event lifecycle.
+
+### Updated boot flow
+
+1. `Aibot.js` remains a thin wrapper and calls `src/index.js`.
+2. `src/index.js` boots `BotController` as the primary runtime.
+3. `BotController` connects the bot, binds `LegacyCompat`, registers commands, and manages task lifecycle.
+4. `LegacyCompat` forwards `start` / `come` / `stop` to legacy speedrun behaviors using the same bot instance.
+5. If framework boot fails, `src/index.js` falls back to `startLegacyBot()`.
+
 ## First Milestone Architecture
 
 `Aibot.js` is retained as a compatibility wrapper and delegates to `src/index.js`.

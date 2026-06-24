@@ -3,8 +3,8 @@ const { goals } = require("mineflayer-pathfinder");
 const { pathfinder, Movements } = require("mineflayer-pathfinder");
 const { Vec3 } = require("vec3");
 
-const playerUsername = "NatsuDragonX"; // Replace with your Minecraft username
-let bot = createBotInstance();
+let playerUsername = "NatsuDragonX"; // Replace with your Minecraft username
+let bot = null;
 let gatherAttempts = 0;
 const maxGatherAttempts = 5;
 const gatherCooldown = 5000;
@@ -31,6 +31,20 @@ function createBotInstance() {
     return botInstance;
 }
 
+function startLegacyRuntime() {
+    if (bot) return bot;
+    bot = createBotInstance();
+    return bot;
+}
+
+function attachBot(botInstance, options = {}) {
+    bot = botInstance;
+    if (options.playerUsername) {
+        playerUsername = options.playerUsername;
+    }
+    return bot;
+}
+
 // Handle bot spawn and begin tasks
 function onBotSpawn() {
     console.log("Bot has spawned and is starting the process.");
@@ -43,7 +57,9 @@ function onBotSpawn() {
 // Handle bot disconnection and attempt reconnection
 function onBotEnd() {
     console.log("Bot disconnected. Attempting to reconnect...");
-    setTimeout(() => createBotInstance(), 5000);
+    setTimeout(() => {
+        bot = createBotInstance();
+    }, 5000);
 }
 
 // Handle chat commands
@@ -960,6 +976,39 @@ async function equipBestWeapon(preferred = "sword") {
         bot.chat(`No ${preferred} available. Defaulting to fist attack.`);
     }
 }
+
+function ensureBotAttached() {
+    if (bot) return true;
+    console.log("Legacy runtime is not attached to a bot instance.");
+    return false;
+}
+
+async function startTask() {
+    if (!ensureBotAttached()) return false;
+    await startTasks();
+    return true;
+}
+
+async function comeTask() {
+    if (!ensureBotAttached()) return false;
+    await teleportToPlayer();
+    return true;
+}
+
+async function stopTask(reason = "Stopping the bot.") {
+    if (!ensureBotAttached()) return false;
+    bot.chat(reason);
+    bot.quit();
+    return true;
+}
+
+module.exports = {
+    startLegacyRuntime,
+    attachBot,
+    startTask,
+    comeTask,
+    stopTask,
+};
 
 function countInInventory(itemName) {
     return bot.inventory.items()

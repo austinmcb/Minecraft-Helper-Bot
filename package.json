@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "node Aibot.js",
-    "test": "node --check Aibot.js && node --check src/index.js"
+    "test": "node --check Aibot.js && node --check src/index.js && node tests/run-smoke-tests.js"
   },
   "dependencies": {
     "mineflayer": "^4.23.0",

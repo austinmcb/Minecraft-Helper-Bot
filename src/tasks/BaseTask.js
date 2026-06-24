@@ -14,6 +14,7 @@ class BaseTask {
       checkpoint: null,
       updatedAt: Date.now(),
     };
+    this.isCanceled = false;
   }
 
   get name() {
@@ -38,6 +39,11 @@ class BaseTask {
 
   async cleanup() {
     this.updateProgress({ status: "completed", percent: 100, step: "cleanup" });
+  }
+
+  async cancel(reason = "Task canceled") {
+    this.isCanceled = true;
+    this.updateProgress({ status: "canceled", step: "cancel", reason });
   }
 
   updateProgress(patch) {
