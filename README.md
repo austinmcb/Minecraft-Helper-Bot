@@ -1,5 +1,4 @@
 
-```markdown
 # Mineflayer Speedrun Bot
 
 This project leverages the [Mineflayer](https://github.com/PrismarineJS/mineflayer) library to create a Minecraft bot capable of simulating a simplified speedrun. The bot performs tasks such as gathering resources, crafting tools, and mining, serving as a foundation for a fully automated Minecraft speedrun bot.
