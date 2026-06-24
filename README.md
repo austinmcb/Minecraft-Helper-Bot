@@ -1,4 +1,3 @@
-Here’s an enhanced and streamlined README with clearer instructions for installation, configuration, and usage:
 
 ```markdown
 # Mineflayer Speedrun Bot
@@ -100,4 +99,3 @@ These additions would require more advanced programming and game mechanics.
 5. **Advanced Usage**: Suggested enhancements to expand the bot’s functionality.
 6. **Troubleshooting**: Improved readability with specific error resolutions.
 
-This should make the setup process and bot usage clearer for users. Let me know if there are specific features or further adjustments you'd like to include!
