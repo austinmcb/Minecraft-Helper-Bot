@@ -17,9 +17,13 @@ The repository currently runs from a single `Aibot.js` file with bot lifecycle, 
 
 1. `Aibot.js` remains a thin wrapper and calls `src/index.js`.
 2. `src/index.js` boots `BotController` as the primary runtime.
-3. `BotController` connects the bot, binds `LegacyCompat`, registers commands, and manages task lifecycle.
-4. `LegacyCompat` forwards `start` / `come` / `stop` to legacy speedrun behaviors using the same bot instance.
-5. If framework boot fails, `src/index.js` falls back to `startLegacyBot()`.
+3. `BotController` connects the bot, loads pathfinder, binds `LegacyCompat`, registers commands, and manages task lifecycle.
+4. Chat commands are parsed by `CommandParser` and dispatched through `TaskRegistry` (`strip-mine`, `clear-box`, plus compatibility commands).
+5. `BotController` enforces single-active-task behavior; new task requests are rejected while busy.
+6. `BotController` validates command dimensions and returns command errors to chat for malformed task input.
+7. `BotController` runs fail-safe checks through `HazardDetector` and `LavaHandler`; unresolved danger stops the task.
+8. `LegacyCompat` forwards `start` / `come` / `stop` to legacy speedrun behaviors using the same bot instance.
+9. If framework boot fails, `src/index.js` falls back to `startLegacyBot()`.
 
 ## First Milestone Architecture
 

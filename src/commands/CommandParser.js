@@ -35,10 +35,18 @@ class CommandParser {
     const positional = parsedCommand?.positional || [];
     const named = parsedCommand?.namedParams || {};
 
+    const width = Number(named.width ?? positional[0] ?? defaults.width ?? 3);
+    const height = Number(named.height ?? positional[1] ?? defaults.height ?? 3);
+    const length = Number(named.length ?? positional[2] ?? defaults.length ?? 100);
+
+    this.#assertPositiveDimension(width, "width");
+    this.#assertPositiveDimension(height, "height");
+    this.#assertPositiveDimension(length, "length");
+
     return {
-      width: Number(named.width ?? positional[0] ?? defaults.width ?? 3),
-      height: Number(named.height ?? positional[1] ?? defaults.height ?? 3),
-      length: Number(named.length ?? positional[2] ?? defaults.length ?? 100),
+      width,
+      height,
+      length,
     };
   }
 
@@ -47,6 +55,12 @@ class CommandParser {
     if (value === "true") return true;
     if (value === "false") return false;
     return value;
+  }
+
+  #assertPositiveDimension(value, name) {
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new Error(`Invalid ${name}: expected a positive number.`);
+    }
   }
 }
 

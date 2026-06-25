@@ -30,6 +30,7 @@ class BotController {
     this.hazardDetector = null;
     this.lavaHandler = null;
     this.currentTaskPromise = null;
+    this.cleanedTasks = new WeakSet();
 
     this.taskRegistry.register("start", () => this.compatibilityLayer.startTask?.());
     this.taskRegistry.register("come", () => this.compatibilityLayer.comeTask?.());
@@ -66,27 +67,31 @@ class BotController {
   async onChat(username, message) {
     if (username === this.bot.username) return;
 
-    const parsed = this.commandParser.parse(message);
-    if (!parsed) return;
+    try {
+      const parsed = this.commandParser.parse(message);
+      if (!parsed) return;
 
-    if (parsed.command === "stop") {
-      await this.stopCurrentTask("Stop command received.", { invokeLegacyStop: true });
-      return;
+      if (parsed.command === "stop") {
+        await this.stopCurrentTask("Stop command received.", { invokeLegacyStop: true });
+        return;
+      }
+
+      const created = this.taskRegistry.createTask(
+        parsed.command,
+        { bot: this.bot, state: this.state, commandParser: this.commandParser },
+        parsed,
+        this.config.tasks
+      );
+
+      if (!created) {
+        this.bot.chat("Unknown command.");
+        return;
+      }
+
+      await this.startTask(created, parsed.command);
+    } catch (error) {
+      this.bot?.chat(`Command error: ${error.message}`);
     }
-
-    const created = this.taskRegistry.createTask(
-      parsed.command,
-      { bot: this.bot, state: this.state, commandParser: this.commandParser },
-      parsed,
-      this.config.tasks
-    );
-
-    if (!created) {
-      this.bot.chat("Unknown command.");
-      return;
-    }
-
-    await this.startTask(created, parsed.command);
   }
 
   async startTask(taskLike, fallbackName = "task") {
@@ -111,9 +116,7 @@ class BotController {
           await task.execute();
         }
 
-        if (typeof task.cleanup === "function") {
-          await task.cleanup();
-        }
+        await this.#cleanupTaskOnce(task);
 
         return true;
       } catch (error) {
@@ -142,9 +145,7 @@ class BotController {
           await task.pauseFromHazard(reason);
         }
 
-        if (typeof task.cleanup === "function") {
-          await task.cleanup();
-        }
+        await this.#cleanupTaskOnce(task);
       } finally {
         this.state.clearCurrentTask();
         this.currentTaskPromise = null;
@@ -209,6 +210,15 @@ class BotController {
       async cleanup() {},
       async cancel() {},
     };
+  }
+
+  async #cleanupTaskOnce(task) {
+    if (!task || typeof task !== "object") return;
+    if (this.cleanedTasks.has(task)) return;
+    this.cleanedTasks.add(task);
+    if (typeof task.cleanup === "function") {
+      await task.cleanup();
+    }
   }
 }
 

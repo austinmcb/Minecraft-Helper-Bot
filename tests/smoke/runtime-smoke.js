@@ -7,10 +7,14 @@ function createControllerForTests() {
   const messages = [];
   const compatibilityLayer = {
     stopCalls: 0,
+    startCalls: 0,
+    comeCalls: 0,
     async startTask() {
+      compatibilityLayer.startCalls += 1;
       return true;
     },
     async comeTask() {
+      compatibilityLayer.comeCalls += 1;
       return true;
     },
     async stopTask() {
@@ -52,6 +56,7 @@ function createControllerForTests() {
 function createBlockingTask(name = "BlockingTask") {
   let release;
   let canceled = false;
+  let cleanupCalls = 0;
   const waitPromise = new Promise((resolve) => {
     release = resolve;
   });
@@ -62,13 +67,18 @@ function createBlockingTask(name = "BlockingTask") {
     async execute() {
       await waitPromise;
     },
-    async cleanup() {},
+    async cleanup() {
+      cleanupCalls += 1;
+    },
     async cancel() {
       canceled = true;
       release();
     },
     get canceled() {
       return canceled;
+    },
+    get cleanupCalls() {
+      return cleanupCalls;
     },
   };
 }
@@ -77,10 +87,16 @@ async function testCommandParser() {
   const parser = new CommandParser();
   const named = parser.parse("/strip-mine width=3 height=3 length=100");
   const positional = parser.parse("/strip-mine 3 3 100");
+  const clearNamed = parser.parse("/clear-box width=25 height=30 length=70");
 
   assert.strictEqual(named.command, "strip-mine");
   assert.deepStrictEqual(named.namedParams, { width: 3, height: 3, length: 100 });
   assert.deepStrictEqual(positional.positional, [3, 3, 100]);
+  assert.deepStrictEqual(clearNamed.namedParams, { width: 25, height: 30, length: 70 });
+  assert.throws(
+    () => parser.parseMiningDimensions(parser.parse("/strip-mine width=abc"), {}),
+    /Invalid width/
+  );
 }
 
 async function testTaskRegistry() {
@@ -98,7 +114,7 @@ async function testTaskRegistry() {
   const clearTask = registry.createTask(
     "clear-box",
     context,
-    parser.parse("/clear-box 25 30 70"),
+    parser.parse("/clear-box width=25 height=30 length=70"),
     { clearBox: { width: 1, height: 1, length: 1 } }
   );
 
@@ -120,6 +136,8 @@ async function testTaskLifecycle() {
   await running;
 
   assert.strictEqual(task.canceled, true);
+  assert.strictEqual(task.cleanupCalls, 1);
+  assert.strictEqual(controller.getCurrentTask(), null);
   assert.strictEqual(controller.isBusy(), false);
 }
 
@@ -151,7 +169,22 @@ async function testStopCancelBehavior() {
   await running;
 
   assert.strictEqual(task.canceled, true);
+  assert.strictEqual(task.cleanupCalls, 1);
   assert.strictEqual(compatibilityLayer.stopCalls, 1);
+}
+
+async function testLegacyCommandRouting() {
+  const { controller, compatibilityLayer } = createControllerForTests();
+  await controller.onChat("player", "/start");
+  await controller.onChat("player", "/come");
+  assert.strictEqual(compatibilityLayer.startCalls, 1);
+  assert.strictEqual(compatibilityLayer.comeCalls, 1);
+}
+
+async function testMalformedCommandHandling() {
+  const { controller, messages } = createControllerForTests();
+  await controller.onChat("player", "/strip-mine width=abc height=3 length=100");
+  assert.ok(messages.some((message) => message.includes("Command error: Invalid width")));
 }
 
 async function run() {
@@ -160,6 +193,8 @@ async function run() {
   await testTaskLifecycle();
   await testBusyTaskRejection();
   await testStopCancelBehavior();
+  await testLegacyCommandRouting();
+  await testMalformedCommandHandling();
   console.log("Smoke tests passed.");
 }
 

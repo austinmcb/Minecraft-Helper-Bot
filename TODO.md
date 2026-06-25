@@ -24,11 +24,13 @@
 ## Phase 5 - Docs and Validation
 - [x] Add `PROJECT_PLAN.md`
 - [x] Add this milestone checklist
-- [ ] Add framework integration tests when test harness exists
+- [x] Add framework smoke tests for parser, task lifecycle, busy rejection, stop/cancel, and legacy routing
+- [ ] Add live integration tests against a running Minecraft server environment
 
 ## Future Safety Work
 - [ ] Lava source + flow detection near mining face
 - [ ] Lava block placement resolver (cobblestone/dirt)
+- [ ] Wire `HazardDetector` checks deeper into movement/path execution, not only task startup
 - [ ] Water handling and drowning prevention
 - [ ] Fall risk detection and recovery
 - [ ] Hostile mob avoidance/combat retreat rules
