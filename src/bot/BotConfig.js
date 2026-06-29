@@ -4,7 +4,7 @@ const BotConfig = {
     host: "localhost",
     port: 25565,
   },
-  playerUsername: "NatsuDragonX",
+  playerUsername: "ZladZootin",
   safety: {
     avoidBlocks: ["lava", "fire", "cactus"],
     failSafeOnLava: true,
